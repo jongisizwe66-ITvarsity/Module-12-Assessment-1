@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Contact</title>
+</head>
+
+<body onload="getContact()">
+    <br/>
+    <div id="avatarImage"></div>
+    <!-- display contact information -->
+    <form class="aditForm">
+        <label for="firstname">First Name</label>
+        <input type="text" name="firstname" id="firstname" readonly><br/>
+        <label for="lastname">Last Name</label>
+        <input type="text" name="lastname" id="lastname" readonly><br/>
+        <label for="mobile">Mobile</label>
+        <input type="text" name="mobile" id="mobile" readonly><br/>
+        <label for="email">Email</label>
+        <input type="text" name="email" id="email" readonly><br/>
+        <label for="avatar" hidden>Select a file</label>
+        <input type="file" id="avatar" hidden><br/>
+        <button type="submit" id="submitForm" hidden>Submit</button>
+    </form>
+
+    <br/>
+    <br/>
+    <!-- control buttons -->
+    <button id="homeLink" type="button">Home</button>
+    <button id="aditContact" type="button">Edit</button>
+    <button id="deleteContact" type="button">Delete</button>
+
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+    <script>
+        var id = getId();
+        document.getElementById("homeLink").addEventListener("click", homeLink);
+        document.getElementById("aditContact").addEventListener("click", aditContact);
+        document.getElementById("submitForm").addEventListener("click", submitForm);
+        document.getElementById("deleteContact").addEventListener("click", deleteContact);
+
+        // get id function
+        function getId(){
+            var url = window.location.href;
+            var pos = url.search("=");
+            var id = url.slice(pos + 1);
+            return id;
+        }
+
+        // get contact from the server
+        function getContact(){
+            fetch(rootPath + "controller/get-contacts/?id=" + id)
+            .then((response) =>{
+                return response.json();
+            })
+            .then((data) =>{
+                displayOutPut(data)
+            })
+        }
+
+        // display output
+        function displayOutPut(data){
+            avatarImg = `<img src="${rootPath}/controller/uploads/${data[0].avatar}" width="200" />`;
+
+            document.getElementById("avatarImage").innerHTML = avatarImg;
+            document.getElementById("firstname").value = data[0].firstname;
+            document.getElementById("lastname").value = data[0].lastname;
+            document.getElementById("mobile").value = data[0].mobile;
+            document.getElementById("email").value = data[0].email;
+        }
+
+        // change the display to aditable format
+        function aditContact(){
+            document.getElementById("firstname").readOnly = false;
+            document.getElementById("lastname").readOnly = false;
+            document.getElementById("mobile").readOnly = false;
+            document.getElementById("email").readOnly = false;
+            document.getElementById("avatar").hidden = false;
+            document.getElementById("submitForm").hidden = false;
+        }
+
+        // submit the edited form data
+        function submitForm(e){
+            e.preventDefault();
+
+            const form = new FormData(document.querySelector(".aditForm"));
+            form.append('apiKey', apiKey);
+            form.append('id', id);
+
+            // send data to a server
+            fetch(rootPath + "controller/insert-contact/", {
+               method: "POST",
+               headers: {"Accept": "application/json, *.*"},
+               body: form
+            })
+            .then((response) =>{
+               return response.text();
+            })
+            .then((data) =>{
+               if(data == "1"){
+                  alert("Contact adited.")
+                  homeLink();
+               }else{
+                  alert(data);
+                 homeLink();
+              }
+            })
+         }
+        
+        //  go to home page function
+        function homeLink(){
+            window.open("index.html", "_self");
+        }
+
+        // function to delete contact
+        function deleteContact(){
+            var confirmDelete = confirm("Delete. Are you sure?");
+
+            if(confirmDelete == true){
+                fetch(rootPath + "controller/delete-contact/?id=" + id)
+                .then((response) =>{
+                   return response.text();
+                })
+                .then((data) =>{
+                   if(data == "1"){
+                      alert("Contact deleted.")
+                      homeLink();
+                    }else{
+                      alert(data);
+                   }
+                })
+            }
+        }
+    </script>
+</body>
+</html>
